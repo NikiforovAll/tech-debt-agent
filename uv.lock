@@ -642,7 +642,7 @@ wheels = [
 
 [[package]]
 name = "tda"
-version = "0.1.1"
+version = "0.1.2"
 source = { editable = "src/tda" }
 dependencies = [
     { name = "claude-agent-sdk" },
@@ -657,7 +657,7 @@ requires-dist = [
 
 [[package]]
 name = "tde"
-version = "0.1.1"
+version = "0.1.2"
 source = { editable = "src/tde" }
 dependencies = [
     { name = "click" },
@@ -674,7 +674,7 @@ requires-dist = [
 
 [[package]]
 name = "techdebt-agent-workspace"
-version = "0.1.1"
+version = "0.1.2"
 source = { virtual = "." }
 
 [[package]]

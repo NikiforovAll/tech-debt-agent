@@ -1,6 +1,7 @@
 """Execute dotnet format commands and handle JSON reports."""
 
 import json
+import logging
 import subprocess
 import tempfile
 from pathlib import Path
@@ -10,6 +11,7 @@ from rich.console import Console
 
 
 console = Console()
+logger = logging.getLogger(__name__)
 
 
 class DotnetFormatRunner:
@@ -148,11 +150,19 @@ class DotnetFormatRunner:
                     text=True
                 )
 
+            logger.debug(f"Report path: {report_path}")
+            logger.debug(f"Exit code: {result.returncode}")
+
+            if result.stderr and result.returncode != 0 and result.returncode != 2:
+                logger.warning(f"dotnet format stderr: {result.stderr}")
+
             if report_path.exists() and report_path.stat().st_size > 0:
                 with open(report_path, 'r', encoding='utf-8') as f:
                     report_data = json.load(f)
+                logger.debug(f"Loaded {len(report_data)} items from report")
             else:
                 report_data = []
+                logger.debug("Report file empty or missing, using empty list")
 
             return {
                 "report": report_data,

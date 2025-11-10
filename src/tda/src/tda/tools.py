@@ -1,5 +1,6 @@
 """Tools for Technical Debt Agent - wraps tde functionality."""
 
+import logging
 from pathlib import Path
 from typing import Any
 
@@ -7,6 +8,9 @@ from claude_agent_sdk import tool
 from tde.formatter import format_as_toon
 from tde.parser import parse_report
 from tde.runner import DotnetFormatRunner
+
+
+logger = logging.getLogger(__name__)
 
 
 @tool("extract_style_diagnostics", "Extract code style diagnostics from a .NET project", {
@@ -30,12 +34,32 @@ async def extract_style_diagnostics(args: dict[str, Any]) -> dict[str, Any]:
     Returns:
         Tool response with diagnostics in TOON format
     """
+    logger.info(f"extract_style_diagnostics called for path: {args.get('path')}")
     try:
         path = Path(args["path"])
         group_by = args.get("group_by", "error")
         summary = args.get("summary", False)
-        diagnostics_filter = args.get("diagnostics")
-        severity = args.get("severity")
+
+        # Handle diagnostics parameter - normalize 'all' to None
+        diagnostics_raw = args.get("diagnostics")
+        if diagnostics_raw == "all" or diagnostics_raw == []:
+            diagnostics_filter = None
+        elif isinstance(diagnostics_raw, list):
+            diagnostics_filter = diagnostics_raw
+        else:
+            diagnostics_filter = None
+
+        # Handle severity parameter - normalize 'all' to None, validate others
+        severity_raw = args.get("severity")
+        valid_severities = {"info", "warn", "error", "hidden"}
+        if severity_raw == "all" or not severity_raw:
+            severity = None
+        elif severity_raw.lower() in valid_severities:
+            severity = severity_raw.lower()
+        else:
+            severity = None
+
+        logger.debug(f"Normalized - diagnostics: {diagnostics_filter}, severity: {severity}")
 
         runner = DotnetFormatRunner(path)
         result = runner.run_style(
@@ -46,15 +70,19 @@ async def extract_style_diagnostics(args: dict[str, Any]) -> dict[str, Any]:
         )
 
         diagnostics = parse_report(result["report"], base_path=path.resolve())
+        logger.info(f"Parsed {len(diagnostics)} style diagnostics")
+
         toon_output = format_as_toon(diagnostics, group_by=group_by, summary=summary)
+        response_text = f"Style diagnostics for {path}:\n\n{toon_output}"
 
         return {
             "content": [{
                 "type": "text",
-                "text": f"Style diagnostics for {path}:\n\n{toon_output}"
+                "text": response_text
             }]
         }
     except Exception as e:
+        logger.exception("Failed to extract style diagnostics")
         return {
             "content": [{
                 "type": "text",
@@ -85,12 +113,32 @@ async def extract_analyzers_diagnostics(args: dict[str, Any]) -> dict[str, Any]:
     Returns:
         Tool response with diagnostics in TOON format
     """
+    logger.info(f"extract_analyzers_diagnostics called for path: {args.get('path')}")
     try:
         path = Path(args["path"])
         group_by = args.get("group_by", "error")
         summary = args.get("summary", False)
-        diagnostics_filter = args.get("diagnostics")
-        severity = args.get("severity")
+
+        # Handle diagnostics parameter - normalize 'all' to None
+        diagnostics_raw = args.get("diagnostics")
+        if diagnostics_raw == "all" or diagnostics_raw == []:
+            diagnostics_filter = None
+        elif isinstance(diagnostics_raw, list):
+            diagnostics_filter = diagnostics_raw
+        else:
+            diagnostics_filter = None
+
+        # Handle severity parameter - normalize 'all' to None, validate others
+        severity_raw = args.get("severity")
+        valid_severities = {"info", "warn", "error", "hidden"}
+        if severity_raw == "all" or not severity_raw:
+            severity = None
+        elif severity_raw.lower() in valid_severities:
+            severity = severity_raw.lower()
+        else:
+            severity = None
+
+        logger.debug(f"Normalized - diagnostics: {diagnostics_filter}, severity: {severity}")
 
         runner = DotnetFormatRunner(path)
         result = runner.run_analyzers(
@@ -101,15 +149,19 @@ async def extract_analyzers_diagnostics(args: dict[str, Any]) -> dict[str, Any]:
         )
 
         diagnostics = parse_report(result["report"], base_path=path.resolve())
+        logger.info(f"Parsed {len(diagnostics)} analyzer diagnostics")
+
         toon_output = format_as_toon(diagnostics, group_by=group_by, summary=summary)
+        response_text = f"Analyzer diagnostics for {path}:\n\n{toon_output}"
 
         return {
             "content": [{
                 "type": "text",
-                "text": f"Analyzer diagnostics for {path}:\n\n{toon_output}"
+                "text": response_text
             }]
         }
     except Exception as e:
+        logger.exception("Failed to extract analyzer diagnostics")
         return {
             "content": [{
                 "type": "text",

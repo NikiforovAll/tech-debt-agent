@@ -1,5 +1,7 @@
 """CLI entrypoint for Technical Debt Extractor."""
 
+import logging
+import os
 import sys
 from pathlib import Path
 
@@ -10,10 +12,48 @@ from .parser import parse_report
 from .runner import DotnetFormatRunner
 
 
+def setup_logging() -> str:
+    """Configure logging with file and console handlers.
+
+    Returns:
+        Path to the log file
+    """
+    import tempfile
+    from logging.handlers import RotatingFileHandler
+
+    log_level = os.getenv("TDE_LOG_LEVEL", "WARNING")
+    log_dir = tempfile.gettempdir()
+    log_file = os.path.join(log_dir, "tde.log")
+
+    # Create handlers
+    file_handler = RotatingFileHandler(
+        log_file,
+        maxBytes=5 * 1024 * 1024,  # 5 MB
+        backupCount=3
+    )
+    console_handler = logging.StreamHandler()
+
+    # Set format
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    file_handler.setFormatter(formatter)
+    console_handler.setFormatter(logging.Formatter('%(levelname)s - %(name)s - %(message)s'))
+
+    # Configure root logger
+    logging.root.setLevel(getattr(logging, log_level.upper(), logging.WARNING))
+    logging.root.addHandler(file_handler)
+    logging.root.addHandler(console_handler)
+
+    return log_file
+
+
 @click.group()
 def main():
-    """Technical Debt Extractor - Run dotnet format and output diagnostics in TOON format."""
-    pass
+    """Technical Debt Extractor - Run dotnet format and output diagnostics in TOON format.
+
+    Logs are written to: {tempdir}/tde.log
+    Set TDE_LOG_LEVEL environment variable to control verbosity (DEBUG, INFO, WARNING, ERROR)
+    """
+    setup_logging()
 
 
 @main.command()
