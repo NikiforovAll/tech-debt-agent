@@ -1,0 +1,8 @@
+[tool.uv.workspace]
+members = ["src/tde", "src/tda"]
+
+[project]
+name = "techdebt-agent-workspace"
+version = "0.1.1"
+description = "Workspace for Technical Debt Agent packages"
+requires-python = ">=3.12"
