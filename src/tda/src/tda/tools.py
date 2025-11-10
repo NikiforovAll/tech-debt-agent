@@ -18,7 +18,8 @@ logger = logging.getLogger(__name__)
     "group_by": str,
     "summary": bool,
     "diagnostics": list[str],
-    "severity": str
+    "severity": str,
+    "include": list[str]
 })
 async def extract_style_diagnostics(args: dict[str, Any]) -> dict[str, Any]:
     """Extract code style diagnostics using dotnet format style.
@@ -30,19 +31,20 @@ async def extract_style_diagnostics(args: dict[str, Any]) -> dict[str, Any]:
             - summary: Whether to show only summary counts
             - diagnostics: List of diagnostic IDs to filter (e.g., ["IDE0055", "IDE1006"])
             - severity: Severity level to filter (error, hidden, info, warn)
+            - include: File glob pattern to filter files (e.g., "**/*.cs", "**/Program.cs")
 
     Returns:
         Tool response with diagnostics in TOON format
     """
-    logger.info(f"extract_style_diagnostics called for path: {args.get('path')}")
+    logger.info(f"extract_style_diagnostics({', '.join(f'{k}={v!r}' for k, v in args.items())})")
     try:
         path = Path(args["path"])
-        group_by = args.get("group_by", "error")
+        group_by = args.get("group_by", "diagnostic")
         summary = args.get("summary", False)
 
         # Handle diagnostics parameter - normalize 'all' to None
         diagnostics_raw = args.get("diagnostics")
-        if diagnostics_raw == "all" or diagnostics_raw == []:
+        if diagnostics_raw == "all" or diagnostics_raw == "[]" or diagnostics_raw == [] or not diagnostics_raw:
             diagnostics_filter = None
         elif isinstance(diagnostics_raw, list):
             diagnostics_filter = diagnostics_raw
@@ -59,11 +61,17 @@ async def extract_style_diagnostics(args: dict[str, Any]) -> dict[str, Any]:
         else:
             severity = None
 
-        logger.debug(f"Normalized - diagnostics: {diagnostics_filter}, severity: {severity}")
+        # Handle include parameter - empty list should be treated as None (no filtering)
+        include_patterns = args.get("include")
+        # Handle string '[]' from agent, empty list, or None
+        if not include_patterns or include_patterns == '[]' or include_patterns == []:
+            include_patterns = None
+
+        logger.debug(f"Normalized - diagnostics: {diagnostics_filter}, severity: {severity}, include: {include_patterns}")
 
         runner = DotnetFormatRunner(path)
         result = runner.run_style(
-            include=None,
+            include=include_patterns,
             no_restore=True,
             diagnostics=diagnostics_filter if diagnostics_filter else None,
             severity=severity
@@ -97,7 +105,8 @@ async def extract_style_diagnostics(args: dict[str, Any]) -> dict[str, Any]:
     "group_by": str,
     "summary": bool,
     "diagnostics": list[str],
-    "severity": str
+    "severity": str,
+    "include": list[str]
 })
 async def extract_analyzers_diagnostics(args: dict[str, Any]) -> dict[str, Any]:
     """Extract 3rd party analyzer diagnostics using dotnet format analyzers.
@@ -109,19 +118,20 @@ async def extract_analyzers_diagnostics(args: dict[str, Any]) -> dict[str, Any]:
             - summary: Whether to show only summary counts
             - diagnostics: List of diagnostic IDs to filter (e.g., ["CA1031", "CA2007"])
             - severity: Severity level to filter (error, hidden, info, warn)
+            - include: File glob pattern to filter files (e.g., "**/*.cs", "**/Program.cs")
 
     Returns:
         Tool response with diagnostics in TOON format
     """
-    logger.info(f"extract_analyzers_diagnostics called for path: {args.get('path')}")
+    logger.info(f"extract_analyzers_diagnostics({', '.join(f'{k}={v!r}' for k, v in args.items())})")
     try:
         path = Path(args["path"])
-        group_by = args.get("group_by", "error")
+        group_by = args.get("group_by", "diagnostic")
         summary = args.get("summary", False)
 
         # Handle diagnostics parameter - normalize 'all' to None
         diagnostics_raw = args.get("diagnostics")
-        if diagnostics_raw == "all" or diagnostics_raw == []:
+        if diagnostics_raw == "all" or diagnostics_raw == "[]" or diagnostics_raw == [] or not diagnostics_raw:
             diagnostics_filter = None
         elif isinstance(diagnostics_raw, list):
             diagnostics_filter = diagnostics_raw
@@ -138,11 +148,17 @@ async def extract_analyzers_diagnostics(args: dict[str, Any]) -> dict[str, Any]:
         else:
             severity = None
 
-        logger.debug(f"Normalized - diagnostics: {diagnostics_filter}, severity: {severity}")
+        # Handle include parameter - empty list should be treated as None (no filtering)
+        include_patterns = args.get("include")
+        # Handle string '[]' from agent, empty list, or None
+        if not include_patterns or include_patterns == '[]' or include_patterns == []:
+            include_patterns = None
+
+        logger.debug(f"Normalized - diagnostics: {diagnostics_filter}, severity: {severity}, include: {include_patterns}")
 
         runner = DotnetFormatRunner(path)
         result = runner.run_analyzers(
-            include=None,
+            include=include_patterns,
             no_restore=True,
             diagnostics=diagnostics_filter if diagnostics_filter else None,
             severity=severity

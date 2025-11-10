@@ -34,11 +34,17 @@ def setup_logging() -> str:
 
     # Set level on handlers
     file_handler.setLevel(logging.DEBUG)  # Log everything to file
-    console_handler.setLevel(getattr(logging, log_level.upper(), logging.INFO))
+    console_handler.setLevel(getattr(logging, log_level.upper(), logging.WARNING))
 
     # Configure root logger
     logging.root.setLevel(logging.DEBUG)  # Capture all levels
     logging.root.addHandler(file_handler)
     logging.root.addHandler(console_handler)
+
+    # Suppress noisy third-party loggers - apply to both console and file
+    # Suppress entire markdown_it logger tree (markdown_it.rules_block.*, etc.)
+    markdown_it_logger = logging.getLogger('markdown_it')
+    markdown_it_logger.setLevel(logging.WARNING)  # Suppress DEBUG and INFO
+    markdown_it_logger.propagate = False  # Don't propagate to root logger
 
     return log_file

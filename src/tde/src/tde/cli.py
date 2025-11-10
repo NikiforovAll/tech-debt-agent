@@ -65,9 +65,9 @@ def main():
 )
 @click.option(
     "--group-by",
-    type=click.Choice(["file", "error"]),
-    default="error",
-    help="Group diagnostics by 'file' or 'error' (rule ID)"
+    type=click.Choice(["file", "diagnostic"]),
+    default="diagnostic",
+    help="Group diagnostics by 'file' or 'diagnostic' (rule ID)"
 )
 @click.option(
     "--summary",
@@ -119,9 +119,9 @@ def style(path: Path, include: tuple[str, ...], group_by: str, summary: bool, di
 )
 @click.option(
     "--group-by",
-    type=click.Choice(["file", "error"]),
-    default="error",
-    help="Group diagnostics by 'file' or 'error' (rule ID)"
+    type=click.Choice(["file", "diagnostic"]),
+    default="diagnostic",
+    help="Group diagnostics by 'file' or 'diagnostic' (rule ID)"
 )
 @click.option(
     "--summary",

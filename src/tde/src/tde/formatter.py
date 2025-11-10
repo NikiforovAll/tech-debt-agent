@@ -8,14 +8,14 @@ from .parser import Diagnostic
 
 def format_as_toon(
     diagnostics: list[Diagnostic],
-    group_by: Literal["file", "error"] = "error",
+    group_by: Literal["file", "diagnostic"] = "diagnostic",
     summary: bool = False
 ) -> str:
     """Format diagnostics as TOON string with configurable grouping.
 
     Args:
         diagnostics: List of diagnostic dictionaries
-        group_by: How to group diagnostics - "error" (by rule ID) or "file" (by file path)
+        group_by: How to group diagnostics - "diagnostic" (by rule ID) or "file" (by file path)
         summary: Show only high-level counts instead of full details
 
     Returns:
@@ -27,16 +27,16 @@ def format_as_toon(
     if summary:
         return _format_summary(diagnostics, group_by)
 
-    if group_by == "error":
-        return _format_grouped_by_error(diagnostics)
+    if group_by == "diagnostic":
+        return _format_grouped_by_diagnostic(diagnostics)
     else:
         return _format_grouped_by_file(diagnostics)
 
 
-def _format_summary(diagnostics: list[Diagnostic], group_by: Literal["file", "error"]) -> str:
+def _format_summary(diagnostics: list[Diagnostic], group_by: Literal["file", "diagnostic"]) -> str:
     """Format diagnostics as a summary with counts and messages."""
-    if group_by == "error":
-        # Group by error code with message from first occurrence
+    if group_by == "diagnostic":
+        # Group by diagnostic code with message from first occurrence
         grouped: dict[str, list[Diagnostic]] = defaultdict(list)
         for d in diagnostics:
             grouped[d["rule"]].append(d)
@@ -63,8 +63,8 @@ def _format_summary(diagnostics: list[Diagnostic], group_by: Literal["file", "er
     return encode(summary_items)
 
 
-def _format_grouped_by_error(diagnostics: list[Diagnostic]) -> str:
-    """Group diagnostics by error/rule ID with inline metadata."""
+def _format_grouped_by_diagnostic(diagnostics: list[Diagnostic]) -> str:
+    """Group diagnostics by diagnostic/rule ID with inline metadata."""
     grouped: dict[str, list[Diagnostic]] = defaultdict(list)
 
     for d in diagnostics:

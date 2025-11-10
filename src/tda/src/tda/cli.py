@@ -10,11 +10,13 @@ from claude_agent_sdk import (
     ClaudeSDKClient,
     AssistantMessage,
     TextBlock,
+    ToolUseBlock,
     ResultMessage
 )
 from prompty import load
 from rich.console import Console
 from rich.markdown import Markdown
+from rich.status import Status
 
 from .agent import techdebt_server
 from .logging_config import setup_logging
@@ -111,10 +113,17 @@ def create_agent_options(cwd: str) -> ClaudeAgentOptions:
         mcp_servers={"techdebt": techdebt_server},
         allowed_tools=[
             "mcp__techdebt__extract_style_diagnostics",
-            "mcp__techdebt__extract_analyzers_diagnostics"
+            "mcp__techdebt__extract_analyzers_diagnostics",
+            "Read",
+            "Write",
+            "Edit",
+            "Glob",
+            "Grep",
+            "WebFetch"
         ],
         cwd=cwd,
-        permission_mode="acceptEdits",
+        permission_mode="bypassPermissions",
+        max_thinking_tokens=0,
         system_prompt={
             "type": "preset",
             "preset": "claude_code",
@@ -137,6 +146,9 @@ def display_response(message, first_message: bool = False):
                     console.print()  # Add blank line before subsequent responses
                 markdown = Markdown(block.text)
                 console.print(markdown)
+            elif isinstance(block, ToolUseBlock):
+                # Display tool usage for visibility
+                console.print(f"[dim cyan]→ Using tool: {block.name}[/dim cyan]")
     elif isinstance(message, ResultMessage):
         if message.total_cost_usd:
             console.print(f"\n[dim]Cost: ${message.total_cost_usd:.4f}[/dim]")
@@ -152,7 +164,7 @@ async def run_agent_interactive(cwd: str, initial_query: str | None = None):
     options = create_agent_options(cwd)
     absolute_cwd = str(Path(cwd).resolve())
 
-    console.print("[bold cyan]Technical Debt Agent (Interactive Mode)[/bold cyan]")
+    console.print("[bold cyan]Technical Debt Agent[/bold cyan]")
     console.print(f"[dim]Working directory: {absolute_cwd}[/dim]")
 
     # Display model (from options or default)
@@ -165,6 +177,7 @@ async def run_agent_interactive(cwd: str, initial_query: str | None = None):
         if initial_query:
             console.print(f"\n[bold green]You>[/bold green] {initial_query}\n")
             await client.query(initial_query)
+
             async for message in client.receive_response():
                 display_response(message, first_message=True)
 
@@ -183,6 +196,7 @@ async def run_agent_interactive(cwd: str, initial_query: str | None = None):
                 break
 
             await client.query(user_query)
+
             async for message in client.receive_response():
                 display_response(message)
 
